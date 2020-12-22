@@ -5,9 +5,7 @@ year 2013.
 
 The repo contains:
 
-- **Data folder**: The clean data set is a cross-sectional data set that includes growth rate of GDP per capita (gdppc_growth_percentage),percentage of renewable 
-energy consumption (percentage_renewable_eng_consmp), growth rate of gross capital formation (gross_capital_formation_percentage), growth rate of population (pop_growth_percentage), 
-percentage of forest area (forest_area_percentage),and a dummy variable developed from 159 countries in year 2013.
+- **Data folder**: The clean data set is a cross-sectional data set that includes growth rate of GDP per capita (gdppc_growth_percentage), percentage of renewable energy consumption (percentage_renewable_eng_consmp), growth rate of gross capital formation (gross_capital_formation_percentage), growth rate of population (pop_growth_percentage), percentage of forest area (forest_area_percentage), and a dummy variable developed from 159 countries in year 2013.
 
 Short explanations of variable used:
 
