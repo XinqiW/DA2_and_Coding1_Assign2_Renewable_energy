@@ -9,7 +9,7 @@ The repo contains:
 
 Short explanations of variable used:
 
-1. percentage_renewable_rng_consmp: renewable energy consumption (% of total final energy consumption)
+1. percentage_renewable_eng_consmp: renewable energy consumption (% of total final energy consumption)
 2. gdppc_growth_percentage: GDP per capita growth (annual %)
 3. gross_capital_formation_percentage: gross capital formation (annual % growth)
 4. pop_growth_percentage: population growth (annual %)
