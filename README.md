@@ -5,15 +5,15 @@ year 2013.
 
 The repo contains:
 
-- **Data folder**: The clean data set is a cross-sectional data set that includes growth rate of GDP per capita (gdppc_growth_percentage), percentage of renewable energy consumption (percentage_renewable_eng_consmp), growth rate of gross capital formation (gross_capital_formation_percentage), growth rate of population (pop_growth_percentage), percentage of forest area (forest_area_percentage), and a dummy variable developed from 159 countries in year 2013.
+- **Data folder**: The clean data set is a cross-sectional data set that includes growth rate of GDP per capita (gdppc_growth), percentage of renewable energy consumption (renewable_eng), growth rate of gross capital formation (capital_formation), growth rate of population (pop_growth), percentage of trade (trade), and a dummy variable developed from 161 countries in year 2013.
 
 Short explanations of variable used:
 
-1. percentage_renewable_eng_consmp: renewable energy consumption (% of total final energy consumption)
-2. gdppc_growth_percentage: GDP per capita growth (annual %)
-3. gross_capital_formation_percentage: gross capital formation (annual % growth)
-4. pop_growth_percentage: population growth (annual %)
-5. forest_area_percentage: forest area (% of land area)
+1. renewable_eng: renewable energy consumption (% of total final energy consumption)
+2. gdppc_growth: GDP per capita growth (annual %)
+3. capital_formation: gross capital formation (annual % growth)
+4. pop_growth: population growth (annual %)
+5. trade: trade (% of GDP)
 6. Developed: dummy variable, equals to 1 if country is developed, 0 otherwise.
 
 This data set is taken from the World Bank- World Development Indicators, with the following indicator code: 
@@ -21,7 +21,7 @@ This data set is taken from the World Bank- World Development Indicators, with t
 2. NY.GDP.PCAP.KD.ZG: GDP per capita growth
 3. NE.GDI.TOTL.KD.ZG: Gross capital formation
 4. SP.POP.GROW: Population growth
-5. AG.LND.FRST.ZS: Forest area
+5. NE.TRD.GNFS.ZS: Trade
 
 link: https://data.worldbank.org/indicator
 
@@ -42,3 +42,4 @@ link: https://data.worldbank.org/indicator
 
 
 - **Output folder**: in this folder, you can find the code generated model summary statistics table in the html format, and also a screenshot of the html result.
+
