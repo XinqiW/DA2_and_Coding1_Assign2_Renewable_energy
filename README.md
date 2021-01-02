@@ -38,7 +38,6 @@ link: https://data.worldbank.org/indicator
 3. renew_energy_analysis.R: this is the R script with all the analysis part of this project. 
 4. robustness_get_clean.R: this is the R script for getting and cleaning data for 2014 for checking external validity.
 5. renew_energy_analysis.Rmd: same as renew_energy_analysis.R but in .Rmd. You should be able to replicate my results by running this Rmd file.
-6. Assignment_2.Rproj: Project file is also included so you should be able to open all the R scripts and Rmd file in this project. 
  
  
  
