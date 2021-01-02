@@ -5,7 +5,11 @@ year 2013.
 
 The repo contains:
 
-- **Data folder**: The clean data set is a cross-sectional data set that includes growth rate of GDP per capita (gdppc_growth), percentage of renewable energy consumption (renewable_eng), growth rate of gross capital formation (capital_formation), growth rate of population (pop_growth), percentage of trade (trade), and a dummy variable developed from 161 countries in year 2013.
+- **Data folder**: 
+
+1. The clean data set “WDI_gdppc_growth_clean” is the main data set we use in our analysis. It is a cross-sectional data set that includes growth rate of GDP per capita (gdppc_growth), percentage of renewable energy consumption (renewable_eng), growth rate of gross capital formation (capital_formation), growth rate of population (pop_growth), percentage of trade (trade), and a dummy variable developed from 161 countries in year 2013.
+
+2. The clean data set “Robustness_2014_WDI_gdppc_growth” is also a cross-sectional data set that includes all the same variables from 160 countries in year 2014. This data set is included for robustness check.
 
 Short explanations of variable used:
 
