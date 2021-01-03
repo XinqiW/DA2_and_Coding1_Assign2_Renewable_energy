@@ -44,4 +44,4 @@ link: https://data.worldbank.org/indicator
 - **Docs folder**: it contains both html and pdf files generated from rmd.
 
 
-
+- **Assignment's public github repo's url**: https://github.com/XinqiW/DA2_and_Coding1_Assign2_Renewable_energy 
