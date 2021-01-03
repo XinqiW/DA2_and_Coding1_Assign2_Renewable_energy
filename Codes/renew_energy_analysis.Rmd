@@ -1,0 +1,615 @@
+---
+title: "Does Renewable Energy Consumption Affect the Growth of GDP Per Capita?"
+author: "Xinqi Wang"
+abstract: This paper aims to establish a possible relationship between countries' renewable energy usage (in % of total energy usage) and their GDP per capita growth, using data from 161 countries in year 2013. We use five different models and find that the extended linear model with additional confounders developed the country’s gross capital formation, and the log of trade gives the best fit. It suggests that when country’s renewable energy consumption percentage is less than 25%, 1% increase in renewable energy consumption will increase a country’s GDP per capita growth by 0.099% on average. On the other hand, when the country’s renewable energy consumption percentage is higher than 25%, 1% increase in renewable energy consumption will decrease a country’s GDP per capita growth by 0.021% on average. However, this data set is not representative as data from 2014 gives different results. 
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+  library(tidyverse)
+  require(scales)         
+  library(moments)        
+  library(lspline)        
+  library(estimatr)       
+  library(ggthemes)       
+  library(knitr)          
+  library(gridExtra)      
+  library(jtools)         
+  library(huxtable)       
+  library(stargazer)
+  library(AER)
+
+# Call the clean data set from Github repo
+my_url <-'https://raw.githubusercontent.com/XinqiW/DA2_and_Coding1_Assign2_Renewable_energy/main/Data/Clean/WDI_gdppc_growth_clean.csv'
+df <- read.csv( my_url )
+
+```
+
+
+#### 1) Introduction:
+The relationship between environmental issues and economic growth has been debated widely. Awareness of carbon risk is rapidly changing, and it's also reshaping the global finance world. This paper aims to establish a possible relationship between countries' renewable energy usage (in % of total energy usage) and their GDP per capita growth, using data from 161 countries. In other words, it tries to help answer how carbon risk affects the economic development of different countries with the help of additional variables like population growth, trade, capital formation, and whether a country is developed.
+
+The remainder of the paper is organized as follow. Section 2 provides data description and possible data transformation. Checking pattern association and model specifications are presented in section 3. This is followed by external validity in section 4. Finally, section 6 concludes. 
+
+#### 2) Data:
+To answer our question, the data set is collected from the World Bank- World Development Indicators consisting of a cross-sectional of 161 countries in 2013. We care about the percentage of changes in GDP per capita in the analysis. Therefore, the explained variable is the growth rate of real per capita GDP. For renewable energy consumption, we use the percentage of the total energy used. Furthermore, the regressors include several variables to control for other factors that affect economic development. The control variables are gross capital formation, population growth and trade. All of them are in percentage as well to be consistent. A dummy variable developed is also included to observe the difference between developed and developing countries. We remove all the missing variables, and the total number of observations for the country cross-sectional is 161.
+
+Overall, this representative sample includes most countries and with minimum data quality issues and measurement errors. There might be validity issues using Gross capital formation growth as domestic investment growth, but we can ignore this since it consists of most elements. Besides, reliability might be another issue with renewable energy consumption. Is the measurement of renewable energy usage reliable might be questioned.
+
+The following histograms show the distributions of each variable. We decide to take the log transformation of trade for a more normal distribution. Other control variables look fine, so there is no need for transformation. The table below shows the descriptive statistics of all variables.
+
+
+```{r, message = F, echo = FALSE, fig.height= 1.6, fig.width= 5,  fig.align='center'}
+### Histogram check all the variables
+# Renewable energy consumption (%)
+Energy_hist <-  df %>% ggplot() +
+  geom_histogram(aes(x = renewable_eng), fill = "orange"
+                 ,  alpha = 0.5, bins = 30) +
+  labs(x = "Renewable energy (% of total final energy)",
+       y = "") +
+  theme_bw() +
+  theme(
+    axis.title = element_text(size = 7),
+    legend.background = element_rect(fill = "white", size = 4, colour = "white"),
+    legend.justification = c(0, 1),
+    legend.position = c(0, 1),
+    axis.ticks = element_line(colour = "grey70", size = 0.2),
+    panel.grid.major = element_line(colour = "grey70", size = 0.2),
+    panel.grid.minor = element_blank()
+  )
+
+
+# GDP per capita growth (annual %)
+GDPPC_hist <-  df %>% ggplot() +
+  geom_histogram(aes(x = gdppc_growth), fill = "darkgreen"
+                 , alpha = 0.5,  bins = 50) +
+  labs(x = "GDP per capita growth (annual %)",
+       y = "") +
+  theme_bw() +
+  theme(
+    axis.title = element_text(size = 7),
+    legend.background = element_rect(fill = "white", size = 4, colour = "white"),
+    legend.justification = c(0, 1),
+    legend.position = c(0, 1),
+    axis.ticks = element_line(colour = "grey70", size = 0.2),
+    panel.grid.major = element_line(colour = "grey70", size = 0.2),
+    panel.grid.minor = element_blank()
+  )
+
+# Create Combined Graphs
+grid.arrange(Energy_hist, GDPPC_hist, ncol = 2)
+```
+
+
+```{r, message = F, echo = FALSE, fig.height= 1.6, fig.width= 5,  fig.align='center'}
+# Gross capital formation (annual % growth)
+Capital_hist <-  df %>% ggplot() +
+  geom_histogram(aes(x = capital_formation), fill = "dodgerblue3"
+                 , alpha = 0.5,  bins = 50) +
+  labs(x = "Gross capital formation (annual % growth)",
+       y = "") +
+  theme_bw() +
+  theme(
+    axis.title = element_text(size = 7),
+    legend.background = element_rect(fill = "white", size = 4, colour = "white"),
+    legend.justification = c(0, 1),
+    legend.position = c(0, 1),
+    axis.ticks = element_line(colour = "grey70", size = 0.2),
+    panel.grid.major = element_line(colour = "grey70", size = 0.2),
+    panel.grid.minor = element_blank()
+  )
+
+
+# Population growth (annual %)
+Population_hist <-  df %>% ggplot() +
+  geom_histogram(aes(x = pop_growth), fill = "chocolate4"
+                 , alpha = 0.5,  bins = 50) +
+  labs(x = "Population growth (annual %)",
+       y = "") +
+  theme_bw() +
+  theme(
+    axis.title = element_text(size = 7),
+    legend.background = element_rect(fill = "white", size = 4, colour = "white"),
+    legend.justification = c(0, 1),
+    legend.position = c(0, 1),
+    axis.ticks = element_line(colour = "grey70", size = 0.2),
+    panel.grid.major = element_line(colour = "grey70", size = 0.2),
+    panel.grid.minor = element_blank()
+  )
+
+# Create Combined Graphs
+grid.arrange(Capital_hist, Population_hist, ncol = 2)
+
+```
+
+```{r, message = F, echo = FALSE, fig.height= 1.6, fig.width= 5,  fig.align='center'}
+# Trade (% of GDP)
+Trade_hist <-  df %>% ggplot() +
+  geom_histogram(aes(x = trade), fill = "purple3"
+                 , alpha = 0.5,  bins = 50) +
+  labs(x = "Trade to GDP Ratio",
+       y = "") +
+  theme_bw() +
+  theme(
+    axis.title = element_text(size = 7),
+    legend.background = element_rect(fill = "white", size = 4, colour = "white"),
+    legend.justification = c(0, 1),
+    legend.position = c(0, 1),
+    axis.ticks = element_line(colour = "grey70", size = 0.2),
+    panel.grid.major = element_line(colour = "grey70", size = 0.2),
+    panel.grid.minor = element_blank()
+  )
+
+
+# Take Log of trade to GDP ratio
+df <- df %>% mutate( ln_trade = log( trade ) )
+
+ln_Trade_hist <-  df %>% ggplot() +
+  geom_histogram(aes(x = ln_trade), fill = "yellowgreen"
+                 , alpha = 0.5,  bins = 50) +
+  labs(x = "Log of Trade to GDP Ratio",
+       y = "") +
+  theme_bw() +
+  theme(
+    axis.title = element_text(size = 7),
+    legend.background = element_rect(fill = "white", size = 4, colour = "white"),
+    legend.justification = c(0, 1),
+    legend.position = c(0, 1),
+    axis.ticks = element_line(colour = "grey70", size = 0.2),
+    panel.grid.major = element_line(colour = "grey70", size = 0.2),
+    panel.grid.minor = element_blank()
+  )
+
+# Create Combined Graphs
+grid.arrange( Trade_hist, ln_Trade_hist, ncol = 2)
+
+```
+
+```{r, message = F, echo = FALSE, fig.height= 1.5, fig.align='center'}
+# Create Inputs 5 Summary Statistic Tables
+# Create Inputs 5 Summary Statistic Tables
+Energy_stats <- df %>% summarise(
+  Variable  = "Renewable energy consumption",
+  Min       = round(min(renewable_eng,na.rm = T),2),
+  Median    = round(median(renewable_eng,na.rm = T),2),
+  Max       = round(max(renewable_eng,na.rm = T),2),
+  Mean      = round(mean(renewable_eng,na.rm = T),2),
+  StDev     = round(sd(renewable_eng,na.rm = T),2),
+  Skewness  = round(skewness(renewable_eng, na.rm = T),2),
+  Observations = nrow(df))
+
+GDPPC_stats <-   df %>% summarise(
+  Variable  = "GDP per capita growth",
+  Min       = round(min(gdppc_growth,na.rm = T),2),
+  Median    = round(median(gdppc_growth,na.rm = T),2),
+  Max       = round(max(gdppc_growth,na.rm = T),2),
+  Mean      = round(mean(gdppc_growth,na.rm = T),2),
+  StDev     = round(sd(gdppc_growth,na.rm = T),2),
+  Skewness  = round(skewness(gdppc_growth, na.rm = T),2),
+  Observations = nrow(df))
+
+Capital_stats <-  df %>% summarise(
+  Variable  = "Gross capital formation",
+  Min       = round(min(capital_formation,na.rm = T),2),
+  Median    = round(median(capital_formation,na.rm = T),2),
+  Max       = round(max(capital_formation,na.rm = T),2),
+  Mean      = round(mean(capital_formation,na.rm = T),2),
+  StDev     = round(sd(capital_formation,na.rm = T),2),
+  Skewness  = round(skewness(capital_formation, na.rm = T),2),
+  Observations = nrow(df))
+
+Population_stats <-  df %>% summarise(
+  Variable  = "Population growth",
+  Min       = round(min(pop_growth,na.rm = T),2),
+  Median    = round(median(pop_growth,na.rm = T),2),
+  Max       = round(max(pop_growth,na.rm = T),2),
+  Mean      = round(mean(pop_growth,na.rm = T),2),
+  StDev     = round(sd(pop_growth,na.rm = T),2),
+  Skewness  = round(skewness(pop_growth, na.rm = T),2),
+  Observations = nrow(df))
+
+Trade_stats <-  df %>% summarise(
+  Variable  = "Trade",
+  Min       = round(min(trade,na.rm = T),2),
+  Median    = round(median(trade,na.rm = T),2),
+  Max       = round(max(trade,na.rm = T),2),
+  Mean      = round(mean(trade,na.rm = T),2),
+  StDev     = round(sd(trade,na.rm = T),2),
+  Skewness  = round(skewness(trade, na.rm = T),2),
+  Observations = nrow(df))
+
+ln_Trade_stats <-  df %>% summarise(
+  Variable  = "Log of Trade",
+  Min       = round(min(ln_trade,na.rm = T),2),
+  Median    = round(median(ln_trade,na.rm = T),2),
+  Max       = round(max(ln_trade,na.rm = T),2),
+  Mean      = round(mean(ln_trade,na.rm = T),2),
+  StDev     = round(sd(ln_trade,na.rm = T),2),
+  Skewness  = round(skewness(ln_trade, na.rm = T),2),
+  Observations = nrow(df))
+
+SummStats <- Energy_stats %>% add_row(GDPPC_stats) %>% add_row(Capital_stats) %>% add_row(Population_stats) %>% 
+  add_row(Trade_stats) %>% add_row(ln_Trade_stats)
+
+SummStats %>% kable(caption = "Summary Statictics", booktabs = T)
+```
+
+#### 3) Model:
+The primary association we care about is between renewable energy consumption and GDP per Capita growth. Let's first check a non-parametric estimator – lowess smoother, to have a general idea of how the relationship looks and determine our functional form between these two variables. The below graph shows the result. The pattern slightly changes around 25% of renewable energy consumption. This result suggests that a Piecewise Linear Spline regression could be used for comparison. The other four variables' scatter plots are shown in the Appendix.
+
+Next, we compare our explanatory variables to find out whether they are highly correlated with each other. The Correlation Matrix table is in the Appendix. Fortunately, we don't have multicollinearity issues since none of our variables have higher than 0.8 correlations. Another issue to think about before model choice is potential interaction terms. It is raised in our question that we expect a difference between developed and developing countries in the relationship between renewable energy consumption and GDP per capita. As a result, a dummy variable "Developed" is included in our data set to capture the possible difference between the two country groups.
+
+```{r, message = F, warning = F, echo = FALSE, fig.height= 2.8, fig.width= 4,fig.align='center'}
+df %>% ggplot(aes(x = renewable_eng, y = gdppc_growth)) +
+  geom_point(color = "dodgerblue3") +
+  geom_smooth(method = "loess", color = "orange") +
+  labs(title = "Lowess Estimator for Renewable energy and GDPPC growth", 
+       x = "Renewable energy consumption (%)",
+       y = "GDP per capita growth (annual %)") +
+  theme_bw() +
+  theme(
+    plot.title = element_text(size = 8, face = "bold"),
+    axis.title = element_text(size = 7),
+    legend.background = element_rect(fill = "white", size = 4, colour = "white"),
+    legend.justification = c(0, 1),
+    legend.position = c(0, 1),
+    axis.ticks = element_line(colour = "grey70", size = 0.2),
+    panel.grid.major = element_line(colour = "grey70", size = 0.2),
+    panel.grid.minor = element_blank())
+
+```
+We start with no controls, the basic simple linear model since our primary question is with the consumption of renewable energy and GDP per capita growth. 
+
+1. **The Simple Linear Regression Model (reg1)**:
+\setlength{\abovedisplayskip}{8pt}
+$$gdppc\_growth = \alpha + \beta * renewable\_eng$$
+
+Next, we use a piecewise linear spline (PLS) with a knot at 25% regression. Alternately, we use interactions for renewable energy by creating a renewable energy consumption dummy (renewable_eng > 25). However, this method does not give us a better fit as the CI is wider than in PLS and the adjusted R-squared drops from 0.0162 to 0.0101.
+
+2. **The Simple Piecewise Linear Spine Regression (reg2)**:
+\setlength{\abovedisplayskip}{8pt}
+$$gdppc\_growth = \alpha + \beta_1 * renewable\_eng * 1(renewable\_eng < 25) \\$$
+$$+ \beta_2 * renewable\_eng * 1(renewable\_eng >= 25)$$
+```{r, message=FALSE, echo=FALSE, results = FALSE}
+  # reg1: NO control, simple linear regression
+  reg1 <- lm_robust( gdppc_growth ~ renewable_eng , data = df )
+  summary( reg1 )
+  
+  # reg2: NO controls, use piecewise linear spline(P.L.S) with a knot at 25
+  reg2 <- lm_robust( gdppc_growth ~ lspline( renewable_eng , 25 ) , data = df )
+  summary( reg2 )
+  
+  # Extra for reg2: 
+  # Now, use interactions for renewable_eng: let a dummy be: renewable_eng > 25, 
+  #     and add their interaction as well
+  # How it is different from P.L.S? Is the parameter of interest statistically different? 
+  # Hint: use 2*Std.Error or CI Lower and CI Upper for comparing intervals!
+  reg21 <- lm_robust( gdppc_growth ~ renewable_eng + (renewable_eng > 25) + renewable_eng*(renewable_eng > 25) , data = df )
+  summary( reg21 )
+```
+We are moving on to models with controls. GDP per capita growth may be correlated with other variables, like whether a country is developed or not, population growth, capital investments, and openness to trade. As a result, we need to control these potential confounders in our regression analysis. We first add country developed dummy, and then to allow for slope changes, we also include an interaction term of the developed dummy and renewable energy consumption. However, given the chosen significance level at 5%, the hypothesis tests of the two coefficients suggest that we cannot reject the null of the two coefficients being zero and it's not a meaningful pattern association. As visible from \textbf{Table 2}, the two beta parameters’ Pr(>|t|) are -1.71 and 1.38, providing sufficient evidence that we cannot reject the null hypothesis, that the beta parameter could be equal to zero, with 95% confidence. 
+```{r, message=FALSE, echo=FALSE, results = FALSE}
+  ###
+  # Models with controls:
+  #
+  # reg3: control for developed country dummy (developed) only. 
+  #   Is your parameter different? Is it a confounder?
+  
+  reg3 <- lm_robust( gdppc_growth ~ lspline( renewable_eng , 25 ) + developed, data = df )
+  summary( reg3 )
+  
+  # Extra for reg3
+  # We can test this hypothesis! use interactions!
+  reg31 <- lm_robust( gdppc_growth ~ lspline( renewable_eng , 25 ) + developed +
+                        lspline( renewable_eng , 25 ) * developed, data = df )
+  summary( reg31 )
+  
+  # You can look at Pr(>|t|) to check if they are zero or
+  # you can use 'linearHypothesis' to test whether these coefficients are zero simultaneously:
+  #   in this case you have to use c("beta1=0,beta2=0") format!
+  linearHypothesis( reg31 , c("lspline(renewable_eng, 25)1:developed = 0",
+                              "lspline(renewable_eng, 25)2:developed = 0") )
+```  
+  
+```{r, message = F, warning = F, echo = F, fig.align='center', fig.height=3, fig.width= 5}
+ModelStats <- round(as.data.frame( summary( reg31 )[[12]]),2)
+
+ModelStats %>% kable(caption = "Summary Statistics for regression with renewable_eng, developed and Interactions", booktabs = T)
+
+```
+
+
+3. **The Simple Piecewise Linear Spine Regression + Developed Dummy (reg3)**
+\setlength{\abovedisplayskip}{8pt}
+$$gdppc\_growth = \alpha + \beta_1 * renewable\_eng * 1(renewable\_eng < 25) \\$$
+$$+ \beta_2 * renewable\_eng * 1(renewable\_eng >= 25) \\$$
+$$+ \beta_3 * developed$$
+
+Next, we add country’s gross capital formation with a knot at 25 and ln_trade to the regression. 
+
+4. **The Simple Piecewise Linear Spine Regression + Developed Dummy + capital formation + ln_trade (reg4) **:
+\setlength{\abovedisplayskip}{8pt}
+$$gdppc\_growth = \alpha + \beta_1 * renewable\_eng * 1(renewable\_eng < 25) \\$$
+$$+ \beta_2 * renewable\_eng * 1(renewable\_eng >= 25) \\$$
+$$+ \beta_3 * developed + \beta_4 * capital\_formation * 1(capital\_formation < 25) \\$$
+$$+ \beta_5 * capital\_formation * 1(capital\_formation >= 25) + \beta_6 * ln\_trade$$
+
+And finally, to control for population growth, we add our last potential confounders. The following table shows the combined regression results. 
+
+5. **The Simple Piecewise Linear Spine Regression + Full Extended Model (reg5)**:
+\setlength{\abovedisplayskip}{8pt}
+$$gdppc\_growth = \alpha + \beta_1 * renewable\_eng * 1(renewable\_eng < 25) \\$$
+$$+ \beta_2 * renewable\_eng * 1(renewable\_eng >= 25) \\$$
+$$+ \beta_3 * developed + \beta_4 * capital\_formation * 1(capital\_formation < 25)\\$$
+$$+ \beta_5 * capital\_formation * 1(capital\_formation >= 25) \\$$
+$$+ \beta_6 * ln\_trade + \beta_7 * pop\_growth$$
+
+
+
+```{r, message=FALSE, echo=FALSE, results = FALSE}
+  ##
+  # reg4: reg3 + Gross Capital Fomration (with P.L.S, knot: 25; and ln_trade)
+  reg4 <- lm_robust( gdppc_growth ~ lspline( renewable_eng , 25 ) + developed 
+                     + lspline(capital_formation,25) + ln_trade , data = df )
+  summary( reg4 )
+  
+  ##
+  # Control for: population growth:
+  #   reg5: reg4 + population growth
+  #
+  reg5 <- lm_robust( gdppc_growth ~ lspline( renewable_eng , 25 ) + developed
+                     + lspline(capital_formation,25) + ln_trade 
+                     + pop_growth , data = df )
+  summary( reg5 )
+```
+
+
+The result from \textbf{Table 3} suggests that without controlling for any other variable (\textbf{Model 1 and 2}), the simple linear model gives a very weak positive association between the country’s renewable energy consumption and GDP per capita growth. However, same without controlling, the PLS regression with a knot at 25% suggests that when a country’s renewable energy consumption percentage is less than 25%, an increase of 1% will increase the country’s GDP per capita growth rate by 0.096% on average. It is also statistically significant at 10%. When a country’s renewable energy consumption percentage is more than 25%, an increase of 1% will decrease its GDP per capita growth rate by 0.012% on average. Both models have a low R-squared, meaning the fitting is not good.
+
+
+For \textbf{Model 3} to \textbf{5}, where we control for possible confounders. \textbf{Model 3} has the dummy variable developed, where we would expect that developed and developing countries would have different GDP per capita growth. In \textbf{Model 4}, we control gross capital formation and ln_trade, and we find that when country’s renewable energy consumption percentage is less than 25%, 1% increase in renewable energy consumption will increase a country’s GDP per capita growth by 0.099% on average. On the other hand, when the country’s renewable energy consumption percentage is higher than 25%, 1% increase in renewable energy consumption will decrease a country’s GDP per capita growth by 0.021% on average. This is a similar result of non-control PLS model but with a higher R-squared. 
+
+
+Lastly, we add population growth to our existing model as this should be an important confounder to our regression (\textbf{Model 5}). We should think that population growth contributes to the GDP per capita growth. However, the result is not significant. It is also surprising to see that the coefficient on renewable_eng becomes insignificant from \textbf{Model 4}. This suggests that renewable energy consumption might have endogenous effect on GDP per capita growth, but not direct effect. In addition, the adjusted R-squared only increases by 0.01, it’s not a big increase comparing with the increase from \textbf{Model 3} to \textbf{Model 4}. As a result, \textbf{Model 4} is a better fit. 
+
+\begin{table}[ht]
+\begin{center}
+\caption{\bf Regression Results Table}
+
+\begin{tabular}{cccccc}
+\hline
+\hline
+
+& Model 1 & Model 2 & Model 3 & Model 4 & Model 5\\
+\hline
+(Intercept)& $1.43^{**}$ &	0.45 &	1.16 &	-4.21 & -3.44\\
+& (0.44)&	(0.59)&	(0.74)&	(3.50)& (3.84)\\
+
+renewable\_eng& 0.01& &	&	&\\
+&(0.02)&	&	&	&\\
+
+lspline(renewable\_eng, 25)1& &	$0.10^{**}$&	$0.08^{*}$&	$0.10^{**}$& 0.07\\
+&&	(0.03)&	(0.04)&	(0.04)& (0.04)\\
+
+lspline(renewable\_eng, 25)2& &	-0.01&	-0.02&	-0.02& -0.01\\
+& &	(0.02)&	(0.02)&	(0.02)& (0.03)\\
+
+
+developed& & &$-1.12^{*}$	&	$-1.22^{*}$& $-1.63^{**}$\\
+& &	&	(0.55)&	(0.55)& (0.53)\\
+
+lspline(capital\_formation, 25)1& &	&	&	$0.14^{*}$& $0.15^{*}$\\
+& &	&	&	(0.07)& (0.07)\\
+
+lspline(capital\_formation, 25)2&  &	&	&	-0.04& -0.05\\
+&  &	&	&	(0.04)& (0.03)\\
+
+ln\_trade& &	 &	 &	1.12 & 1.19\\
+& &	&	&	(0.75)& (0.72)\\
+
+pop\_growth& &	 &	 & & -0.47\\
+& &	&	&	& (0.29)\\
+\hline
+
+Observation& 161& 161& 161& 161& 161\\
+Adjusted $R^{2}$& 0.00&	0.02	&0.02&	0.13& 0.14\\
+\hline
+\hline
+\footnotesize
+p $<$ 0.001 $***$ \\
+\footnotesize
+p $<$ 0.01 $**$  \\
+\footnotesize
+p $<$ 0.05 $*$ \\
+\end{tabular}
+\end{center}
+\end{table}
+
+```{r, message = F, warning = F, echo = F, results = FALSE, size=1, fig.height= 1 }
+knitr::opts_chunk$set(echo = TRUE, fig.pos= "h")
+exptbl <- export_summs(reg1, reg2,reg3,reg4,reg5,
+                         model.names = c("(1)",
+                                         "(2)",
+                                         "(3)",
+                                         "(4)",
+                                         "(5)"))
+  
+  as_hux(exptbl) %>% set_col_width(rep(c(0.4, 0.2, 0.2, 0.2, 0.2, 0.2), 3)/3) %>% set_caption("Regression Results Table")
+  
+```
+
+
+```{r, message = F, warning = F, echo = F, fig.align='center', fig.height=3, fig.width= 5}
+ModelStats2 <- round(as.data.frame( summary( reg4 )[[12]]),2)
+
+ModelStats2 %>% kable(caption = "Summary Statistics for Full extended model (Model 4)", booktabs = T)
+
+```
+
+To make sure our parameter of interest, renewable energy consumption is indeed a confounder in \textbf{Model 4}. We can establish a meaningful pattern association between them. We need to test whether beta, the slope parameter is equal to zero. Our null hypothesis is that beta1 and beta2 are equal to 0, and the alternative is they are not equal to 0. Beta 1 is the slope parameter of renewable energy consumption when it is less than 25%, and beta 2 is the slope parameter on renewable energy consumption when it is greater than 25%. Given the chosen significance level at 5%, we can only safely reject the null hypothesis on beta 1, but not on beta2. The result from \textbf{Table 4} suggests when a country’s renewable energy consumption is less than 25%. There is indeed a relationship between country’s renewable energy consumption and it’s GDP per capita growth, which is a 1% increase in the country’s renewable energy consumption, will increase the country’s GDP per capita growth by 0.1% on average.
+
+#### 4) External Validity:
+```{r setup2, include=FALSE}
+# Call the clean data set from Github repo
+  my_url2 <-'https://raw.githubusercontent.com/XinqiW/DA2_and_Coding1_Assign2_Renewable_energy/main/Data/Clean/Robustness_2014_WDI_gdppc_growth.csv'
+  df2 <- read.csv( my_url2 )
+```
+
+```{r, message=FALSE, echo=FALSE, results = FALSE}
+  # Take Log of trade to GDP ratio
+  df2 <- df2 %>% mutate( ln_trade = log( trade ) )
+``` 
+  
+```{r, message=FALSE, echo=FALSE, results = FALSE}
+  # reg6: reg3 + Gross Capital Fomration (with P.L.S, knot: 25; and ln_trade) using 2014 Data
+  reg6 <- lm_robust( gdppc_growth ~ lspline( renewable_eng , 25 ) + developed 
+                     + lspline(capital_formation,25) + ln_trade , data = df2 )
+  summary( reg6 )
+```
+
+Is our sample representative of the observed pattern? To check for external validity, we decide to take another year of the same variables using Model 4. The regression results in \textbf{Table 7} in the Appendix suggests that our findings using the 2013 data set is not necessarily representative. To test if renewable energy consumption is indeed associated with GDP per capita growth, our null hypothesis is that beta1 and beta2 are equal to 0. The alternative is they are not equal to 0. Beta 1 is the slope parameter of renewable energy consumption when it is less than 25%, and beta 2 is the slope parameter on renewable energy consumption when it is greater than 25%. From \textbf{Table 5}, given the chosen significance level at 5%, we cannot reject the null hypothesis on beta 1 or beta2, meaning we cannot rule out the possibility that renewable energy consumption and GDP per capita growth are not associated with each other.
+
+```{r, message = F, warning = F, echo = F, fig.align='center', fig.height=3, fig.width= 5}
+ModelStats2 <- round(as.data.frame( summary( reg6 )[[12]]),2)
+
+ModelStats2 %>% kable(caption = "Summary Statistics for Full extended model (Model 4) using 2014 Data", booktabs = T)
+
+```
+ 
+#### 5) Summary:
+We are interested in finding a pattern between country’s renewable energy consumption and its GDP per capita growth. We use five different models and find that the extended linear model with additional confounders developed the country’s gross capital formation, and the log of trade gives the best fit. It suggests that when country’s renewable energy consumption percentage is less than 25%, 1% increase in renewable energy consumption will increase a country’s GDP per capita growth by 0.099% on average. On the other hand, when the country’s renewable energy consumption percentage is higher than 25%, 1% increase in renewable energy consumption will decrease a country’s GDP per capita growth by 0.021% on average. However, we cannot rule out the possibility that when a country’s consumption is greater than 25%, there is no relationship between renewable energy consumption and GDP per capita growth.
+
+Indeed, to consider external validity, we use the 2014 data set to test. The results suggest that the results we get from 2013 are not necessarily representative. The relationship between renewable energy consumption and GDP per capita growth might be endogenous through other variables like population growth, but not directly. We would like to leave this for future analysis.
+
+
+\newpage
+#### Appendix
+
+The pattern for gross capital formation and GDP per capita growth slightly changes around 25% of gross capital formation. This result suggests that a Piecewise Linear Spline regression should be used for comparison. 
+
+
+```{r, message = F, warning = F, echo = FALSE, fig.height= 2.8, fig.width= 4,fig.align='center'}
+df %>% ggplot(aes(x = capital_formation, y = gdppc_growth)) +
+  geom_point(color = "dodgerblue3") +
+  geom_smooth(method = "loess", color = "orange") +
+  labs(title = "Lowess Estimator for Capital Formation and GDPPC growth", 
+       x = "Gross capital formation (annual % growth)",
+       y = "GDP per capita growth (annual %)") +
+  theme_bw() +
+  theme(
+    plot.title = element_text(size = 8, face = "bold"),
+    axis.title = element_text(size = 7),
+    legend.background = element_rect(fill = "white", size = 4, colour = "white"),
+    legend.justification = c(0, 1),
+    legend.position = c(0, 1),
+    axis.ticks = element_line(colour = "grey70", size = 0.2),
+    panel.grid.major = element_line(colour = "grey70", size = 0.2),
+    panel.grid.minor = element_blank())
+
+```
+
+```{r, message = F, warning = F, echo = FALSE, fig.height= 2.8, fig.width= 4,fig.align='center'}
+df %>% ggplot(aes(x = pop_growth, y = gdppc_growth)) +
+  geom_point(color = "dodgerblue3") +
+  geom_smooth(method = "loess", color = "orange") +
+  labs(title = "Lowess Estimator for Population Growth and GDPPC growth", 
+       x = "Population growth (annual %)",
+       y = "GDP per capita growth (annual %)") +
+  theme_bw() +
+  theme(
+    plot.title = element_text(size = 8, face = "bold"),
+    axis.title = element_text(size = 7),
+    legend.background = element_rect(fill = "white", size = 4, colour = "white"),
+    legend.justification = c(0, 1),
+    legend.position = c(0, 1),
+    axis.ticks = element_line(colour = "grey70", size = 0.2),
+    panel.grid.major = element_line(colour = "grey70", size = 0.2),
+    panel.grid.minor = element_blank())
+
+```
+
+The pattern for population growth and GDP per capita growth seems to be nonlinear, and the pattern for log of trade and GDP per capita growth is linear. It also seems there is a different average for developed and developing countries. 
+
+```{r, message = F, warning = F, echo = FALSE, fig.height= 2.8, fig.width= 4,fig.align='center'}
+df %>% ggplot(aes(x = ln_trade, y = gdppc_growth)) +
+  geom_point(color = "dodgerblue3") +
+  geom_smooth(method = "loess", color = "orange") +
+  labs(title = "Lowess Estimator for log of trade and GDPPC growth", 
+       x = "Log of Trade to GDP Ratio",
+       y = "GDP per capita growth (annual %)") +
+  theme_bw() +
+  theme(
+    plot.title = element_text(size = 8, face = "bold"),
+    axis.title = element_text(size = 7),
+    legend.background = element_rect(fill = "white", size = 4, colour = "white"),
+    legend.justification = c(0, 1),
+    legend.position = c(0, 1),
+    axis.ticks = element_line(colour = "grey70", size = 0.2),
+    panel.grid.major = element_line(colour = "grey70", size = 0.2),
+    panel.grid.minor = element_blank())
+
+```
+
+```{r, message = F, warning = F, echo = FALSE, fig.height= 2.8, fig.width= 4,fig.align='center'}
+df %>% ggplot(aes(x = developed, y = gdppc_growth)) +
+  geom_point(color = "dodgerblue3") +
+  geom_smooth(method = "loess", color = "orange") +
+  labs(title = "Lowess Estimator for Developed and GDPPC growth", 
+       x = "Dummy Developed",
+       y = "GDP per capita growth (annual %)") +
+  theme_bw() +
+  theme(
+    plot.title = element_text(size = 8, face = "bold"),
+    axis.title = element_text(size = 7),
+    legend.background = element_rect(fill = "white", size = 4, colour = "white"),
+    legend.justification = c(0, 1),
+    legend.position = c(0, 1),
+    axis.ticks = element_line(colour = "grey70", size = 0.2),
+    panel.grid.major = element_line(colour = "grey70", size = 0.2),
+    panel.grid.minor = element_blank())
+
+```
+
+
+
+```{r, message = F, echo = FALSE, fig.height= 1.5, fig.align='center'}
+correlation.matrix <- cor(df[,c("developed","renewable_eng","gdppc_growth","capital_formation","pop_growth","ln_trade")])
+correlation.matrix %>% kable(caption = "Correlation Matrix", booktabs = T)
+```
+
+```{r, message = F, warning = F, echo = FALSE, fig.height= 2.8, fig.width= 4,fig.align='center'}
+
+  # Check the pattern of association between Renewable energy consumption and GDP per capita growth
+  
+  df2 %>% ggplot(aes(x = renewable_eng, y = gdppc_growth)) +
+    geom_point(color = "dodgerblue3") +
+    geom_smooth(method = "loess", color = "orange") +
+    labs(title = "Lowess Estimator for Renewable energy consumption and GDP per capita growth 2014", 
+         x = "2014_Renewable energy consumption (%)",
+         y = "2014_GDP per capita growth (annual %)") +
+    theme_bw() +
+    theme(
+      plot.title = element_text(size = 6, face = "bold"),
+      axis.title = element_text(size = 7),
+      legend.background = element_rect(fill = "white", size = 4, colour = "white"),
+      legend.justification = c(0, 1),
+      legend.position = c(0, 1),
+      axis.ticks = element_line(colour = "grey70", size = 0.2),
+      panel.grid.major = element_line(colour = "grey70", size = 0.2),
+      panel.grid.minor = element_blank())
+``` 
+
+```{r, message = F, warning = F, echo = F, size=1, fig.height= 1 }
+  ##
+  # Summarize our findings:
+  exptbl2 <- export_summs(reg4,reg6,
+                         model.names = c("(4)",
+                                         "(6)"))
+  
+  as_hux(exptbl2) %>% set_caption("Robustness Check Results Table")
+  
+```
